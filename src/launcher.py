@@ -3,12 +3,6 @@ import subprocess
 from pathlib import Path
 
 
-def _ps_quote(value: str) -> str:
-    """Escape for a PowerShell single-quoted string. Apostrophes are legal in
-    NTFS paths (C:\\Ben's Code) and would otherwise close the quote early."""
-    return value.replace("'", "''")
-
-
 def _system32(*parts) -> str:
     """Absolute path under %SystemRoot%\\System32.
 
@@ -31,22 +25,25 @@ def cmd_path() -> str:
 
 
 def build_launch_command(terminal_type: str, target_dir: str) -> list:
-    target_path = str(Path(target_dir).resolve())
     if terminal_type == "powershell":
         return [
             powershell_path(),
             "-NoExit",
             "-Command",
-            f"Set-Location -LiteralPath '{_ps_quote(target_path)}'; claude",
+            "claude",
         ]
     return [
         cmd_path(),
         "/k",
-        f'cd /d "{target_path}" && claude',
+        "claude",
     ]
 
 
 def launch_claude(terminal_type: str, target_dir: str):
     cmd = build_launch_command(terminal_type, target_dir)
-    # argv list, no shell interpolation
-    return subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    # `cwd` sets the child process directory without CMD/PowerShell parsing.
+    return subprocess.Popen(
+        cmd,
+        cwd=str(Path(target_dir).resolve()),
+        creationflags=subprocess.CREATE_NEW_CONSOLE,
+    )

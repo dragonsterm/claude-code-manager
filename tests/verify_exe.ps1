@@ -1,6 +1,6 @@
 # Post-build acceptance check. Launches the packaged exe from a foreign CWD.
 $ErrorActionPreference = 'Stop'
-$exe = Join-Path $PSScriptRoot '..\dist\ClaudeCodeManager\ClaudeCodeManager.exe' | Resolve-Path
+$exe = Join-Path $PSScriptRoot '..\dist\ClaudeCodeManager.exe' | Resolve-Path
 
 Write-Host '== version resource =='
 $vi = (Get-Item $exe).VersionInfo
