@@ -8,7 +8,7 @@ import tempfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-MODULES = ("tests.test_app_state", "tests.test_launcher")
+MODULES = ("tests.test_app_state", "tests.test_launcher", "tests.test_ui")
 
 
 def main():

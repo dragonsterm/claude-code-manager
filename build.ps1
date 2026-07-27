@@ -1,6 +1,8 @@
 # Build ClaudeCodeManager.exe (onedir). Run from the project root.
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
+# Clear stale PyInstaller Tcl paths inherited from a launched onefile app.
+Remove-Item Env:TCL_LIBRARY,Env:TK_LIBRARY -ErrorAction SilentlyContinue
 
 $py = 'C:\Users\mahar\AppData\Local\Programs\Python\Python313\python.exe'
 if (-not (Test-Path $py)) { $py = (Get-Command python).Source }

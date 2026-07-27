@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.ui import ClaudeCodeManagerUI  # noqa: E402
+from src.ui import ClaudeCodeManagerUI, NewProjectDialog  # noqa: E402
 
 root = tk.Tk()
 root.withdraw()
@@ -51,6 +51,16 @@ from src.ui import validate_folder_name  # noqa: E402
 assert validate_folder_name("MyApp") is None
 for bad in ("", "  ", "..", "a/b", "a:b", "CON", "nul.txt", "trail.", " lead"):
     assert validate_folder_name(bad) is not None, f"accepted bad name: {bad!r}"
+
+# New-project dialog provides preview, validation, keyboard-ready result state.
+dialog = NewProjectDialog(root, here)
+root.update_idletasks()
+assert dialog.preview.cget("text").endswith("\\_")
+dialog.name.set("Project")
+root.update_idletasks()
+assert dialog.preview.cget("text").endswith("Project_")
+assert dialog.confirm.cget("state") == "normal"
+dialog.destroy()
 
 root.destroy()
 print("UI smoke OK")

@@ -1,6 +1,6 @@
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, simpledialog
+from tkinter import filedialog, messagebox
 
 from src.app_state import AppState
 from src.launcher import launch_claude
@@ -22,7 +22,7 @@ COLOR_PS_BLUE_HOVER = "#1A88E0"
 COLOR_CMD_GREY = "#4E4E4E"
 COLOR_CMD_GREY_HOVER = "#5E5E5E"
 
-WIN_W, WIN_H = 560, 330
+WIN_W, WIN_H = 560, 290
 
 # Windows rejects these as filenames regardless of extension.
 RESERVED_NAMES = {"CON", "PRN", "AUX", "NUL"}
@@ -50,6 +50,12 @@ def validate_folder_name(name: str):
     return None
 
 
+def format_folder_preview(parent_dir: Path, name: str) -> str:
+    """Render the prospective path with invalid filename characters omitted."""
+    clean_name = "".join(char for char in name if char not in INVALID_CHARS).rstrip(" .")
+    return str(parent_dir / clean_name) + "_" if clean_name else str(parent_dir) + "\\_"
+
+
 def _hover(widget, normal, hovered):
     """Background swap on mouse over. Disabled widgets keep their colour."""
     def enter(_event):
@@ -62,6 +68,88 @@ def _hover(widget, normal, hovered):
 
     widget.bind("<Enter>", enter)
     widget.bind("<Leave>", leave)
+
+
+class NewProjectDialog(tk.Toplevel):
+    """Modal, dark project-name prompt with a live destination preview."""
+    def __init__(self, parent: tk.Tk, parent_dir: str):
+        super().__init__(parent)
+        self.parent_dir = Path(parent_dir)
+        self.result = None
+        self.title("Create New Project")
+        self.configure(bg=COLOR_BG)
+        self.resizable(False, False)
+        self.transient(parent)
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+
+        frame = tk.Frame(self, bg=COLOR_BG, padx=20, pady=18)
+        frame.pack(fill="both", expand=True)
+        tk.Label(frame, text="FOLDER PREVIEW", bg=COLOR_BG, fg=COLOR_TEXT_DIM,
+                 font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        preview_card = tk.Frame(frame, bg=COLOR_PANEL, padx=12, pady=10,
+                                highlightbackground=COLOR_BORDER, highlightthickness=1)
+        preview_card.pack(fill="x", pady=(6, 18))
+        self.preview = tk.Label(preview_card, bg=COLOR_PANEL, fg=COLOR_TEXT_BRIGHT,
+                                font=("Consolas", 10), anchor="w", justify="left",
+                                wraplength=410)
+        self.preview.pack(fill="x")
+
+        tk.Label(frame, text="PROJECT NAME", bg=COLOR_BG, fg=COLOR_TEXT_DIM,
+                 font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        self.name = tk.StringVar()
+        self.entry = tk.Entry(frame, textvariable=self.name, bg=COLOR_PANEL,
+                              fg=COLOR_TEXT_BRIGHT, insertbackground=COLOR_TEXT_BRIGHT,
+                              relief="flat", highlightbackground=COLOR_BORDER,
+                              highlightcolor=COLOR_ORANGE, highlightthickness=1,
+                              font=("Segoe UI", 10))
+        self.entry.pack(fill="x", ipady=7, pady=(6, 3))
+        self.error = tk.Label(frame, bg=COLOR_BG, fg="#F48771", anchor="w",
+                              font=("Segoe UI", 8), height=1)
+        self.error.pack(fill="x")
+
+        buttons = tk.Frame(frame, bg=COLOR_BG)
+        buttons.pack(anchor="e", pady=(14, 0))
+        cancel = tk.Button(buttons, text="Cancel", command=self.cancel,
+                           bg=COLOR_PANEL, fg=COLOR_TEXT_BRIGHT, relief="flat", bd=0,
+                           padx=16, pady=7, font=("Segoe UI", 9, "bold"), cursor="hand2")
+        cancel.pack(side="left", padx=(0, 8))
+        _hover(cancel, COLOR_PANEL, COLOR_PANEL_HOVER)
+        self.confirm = tk.Button(buttons, text="Confirm", command=self.accept,
+                                 bg=COLOR_ORANGE, fg=COLOR_TEXT_BRIGHT, relief="flat", bd=0,
+                                 padx=16, pady=7, font=("Segoe UI", 9, "bold"), cursor="hand2")
+        self.confirm.pack(side="left")
+        _hover(self.confirm, COLOR_ORANGE, COLOR_ORANGE_HOVER)
+
+        self.name.trace_add("write", self._update)
+        self.bind("<Return>", self.accept)
+        self.bind("<Escape>", self.cancel)
+        self._update()
+        self.entry.focus_set()
+        self.update_idletasks()
+        self.geometry(f"460x250+{parent.winfo_rootx() + 50}+{parent.winfo_rooty() + 30}")
+        apply_dark_titlebar(self)
+
+    def _update(self, *_args):
+        value = self.name.get()
+        self.preview.config(text=format_folder_preview(self.parent_dir, value))
+        error = validate_folder_name(value) if value else ""
+        self.error.config(text=error or "")
+        self.confirm.config(state="normal" if not error and value else "disabled")
+
+    def accept(self, _event=None):
+        value = self.name.get()
+        error = validate_folder_name(value)
+        if error:
+            self.error.config(text=error)
+            return "break"
+        self.result = value
+        self.destroy()
+        return "break"
+
+    def cancel(self, _event=None):
+        self.destroy()
+        return "break"
 
 
 class ClaudeCodeManagerUI:
@@ -138,7 +226,7 @@ class ClaudeCodeManagerUI:
 
         # --- divider ---------------------------------------------------
         self.divider = tk.Frame(self.root, bg=COLOR_BORDER, height=1)
-        self.divider.pack(fill="x", padx=20, pady=20)
+        self.divider.pack(fill="x", padx=20, pady=(16, 20))
 
         # --- launch row ------------------------------------------------
         launch_row = tk.Frame(self.root, bg=COLOR_BG)
@@ -163,7 +251,7 @@ class ClaudeCodeManagerUI:
 
         tk.Label(self.root, text="Ctrl+T  switch shell     Enter  launch",
                  bg=COLOR_BG, fg=COLOR_TEXT_DIM,
-                 font=("Segoe UI", 8)).pack(anchor="e", padx=20, pady=(14, 0))
+                 font=("Segoe UI", 8)).pack(anchor="e", padx=20, pady=(8, 20))
 
     def toggle_terminal(self):
         self.state.set_terminal("cmd" if self.state.terminal == "powershell" else "powershell")
@@ -188,14 +276,11 @@ class ClaudeCodeManagerUI:
                                              initialdir=self._browse_start_dir())
         if not parent_dir:
             return
-        raw = simpledialog.askstring("New Project", "Enter project folder name:")
-        if raw is None:
+        dialog = NewProjectDialog(self.root, parent_dir)
+        self.root.wait_window(dialog)
+        if dialog.result is None:
             return
-        error = validate_folder_name(raw)
-        if error:
-            messagebox.showerror("Invalid Name", error)
-            return
-        new_path = Path(parent_dir) / raw
+        new_path = Path(parent_dir) / dialog.result
         try:
             new_path.mkdir(parents=True, exist_ok=True)
         except OSError as exc:
