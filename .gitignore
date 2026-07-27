@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# PyInstaller build output (ship binaries via GitHub Releases, not the repo)
+build/
+dist/
+
+# Local runtime config — the app's real config lives in %APPDATA%\ClaudeCodeManager
+config.json
+
+# Working notes, not shipped docs
+plan.md
+
+# Claude Code local overrides (settings.json is shared, .local.json is not)
+.claude/settings.local.json
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
