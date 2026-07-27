@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
-# onefile + windowed mode
+# onefile + windowed mode. UPX stays disabled: compressed PyInstaller payloads
+# trigger more heuristic AV false positives.
 block_cipher = None
 
 a = Analysis(
