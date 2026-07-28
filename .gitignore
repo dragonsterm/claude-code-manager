@@ -23,3 +23,10 @@ plan.md
 .idea/
 Thumbs.db
 desktop.ini
+
+# Graphify & Obsidian Vault local artifacts
+.graphify/
+studio/
+.obsidian/
+obsidian-vault/
+
